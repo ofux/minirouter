@@ -86,7 +86,7 @@ func TestMini_path(t *testing.T) {
 	}
 }
 
-func TestMini_Get(t *testing.T) {
+func TestMini_GET(t *testing.T) {
 	t.Run("Single route, no param, no middleware", func(t *testing.T) {
 		r := New()
 		r.GET("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func assertResponse(t *testing.T, res *http.Response, status int, minirouterHead
 	}
 }
 
-func TestMini_Group(t *testing.T) {
+func TestMini_WithBasePath(t *testing.T) {
 	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
 		r := New()
 		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -309,5 +309,245 @@ func TestMini_Group(t *testing.T) {
 		res, err = http.Post(srv.URL+"/foo/bar", "text/plain", bytes.NewReader([]byte("X")))
 		assertNoError(t, err)
 		assertResponse(t, res, 201, "bar", "", "OK X")
+	})
+}
+
+func TestMini_PUT(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.PUT("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			r.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.WriteHeader(http.StatusTeapot)
+			if _, err := w.Write([]byte("OK " + string(body))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.POST("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.GET("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodPut, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, http.StatusTeapot, "bar", "john", "OK X")
+	})
+}
+
+func TestMini_POST(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.POST("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			r.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.WriteHeader(http.StatusTeapot)
+			if _, err := w.Write([]byte("OK " + string(body))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.PUT("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.GET("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodPost, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, http.StatusTeapot, "bar", "john", "OK X")
+	})
+}
+
+func TestMini_PATCH(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.PATCH("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			r.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.WriteHeader(http.StatusTeapot)
+			if _, err := w.Write([]byte("OK " + string(body))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.PUT("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.GET("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodPatch, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, http.StatusTeapot, "bar", "john", "OK X")
+	})
+}
+
+func TestMini_DELETE(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			if _, err := w.Write([]byte("OK " + Params(r).ByName("id"))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.PUT("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.GET("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.PATCH("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodDelete, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, 200, "bar", "john", "OK john")
+	})
+}
+
+func TestMini_OPTIONS(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.OPTIONS("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			if _, err := w.Write([]byte("OK " + Params(r).ByName("id"))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.PUT("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.GET("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodOptions, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, 200, "bar", "john", "OK john")
+	})
+}
+
+func TestMini_HandleFunc(t *testing.T) {
+	t.Run("Multiple routes, some param, some middleware and inline middleware", func(t *testing.T) {
+		r := New()
+		r = r.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Minirouter", "bar")
+		}))
+		r.HandleFunc(http.MethodGet, "/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			if _, err := w.Write([]byte("OK " + Params(r).ByName("id"))); err != nil {
+				t.Fatal(err)
+			}
+		}, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				addHeaderID(w, r)
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.HandleFunc(http.MethodGet, "/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.HandleFunc(http.MethodOptions, "/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+		r.DELETE("/foo/bar/:id", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("not expected to be here")
+		})
+
+		srv := httptest.NewServer(r)
+		defer srv.Close()
+
+		req, err := http.NewRequest(http.MethodGet, srv.URL+"/foo/bar/john", bytes.NewReader([]byte("X")))
+		assertNoError(t, err)
+		res, err := http.DefaultClient.Do(req)
+		assertNoError(t, err)
+		assertResponse(t, res, 200, "bar", "john", "OK john")
 	})
 }

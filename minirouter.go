@@ -37,7 +37,7 @@ func (m *Mini) Router() *httprouter.Router {
 	return m.router
 }
 
-// WithBasePath returns a new Mini in which a set of sub-routes can be defined. It can be used for inner
+// WithBasePath returns a new child Mini in which a set of sub-routes can be defined. It can be used for inner
 // routes that share a common middleware. It inherits all middlewares and base-path of the parent Mini.
 func (m *Mini) WithBasePath(path string) *Mini {
 	var middlewaresCopy []Middleware
@@ -53,14 +53,14 @@ func (m *Mini) WithBasePath(path string) *Mini {
 	}
 }
 
-// WithMiddleware creates a new child Mini instance with one or more middleware.
+// WithMiddleware returns a new child Mini with one or more middleware.
 func (m *Mini) WithMiddleware(middleware ...Middleware) *Mini {
 	newMini := m.WithBasePath("")
 	newMini.middlewares = append(newMini.middlewares, middleware...)
 	return newMini
 }
 
-// WithHandlerMiddleware creates a new child Mini instance and registers an http.Handler as a middleware.
+// WithHandlerMiddleware returns a new child Mini and registers an http.Handler as a middleware.
 func (m *Mini) WithHandlerMiddleware(handler http.Handler) *Mini {
 	return m.WithMiddleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
