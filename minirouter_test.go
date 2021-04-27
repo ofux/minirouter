@@ -95,7 +95,7 @@ func TestMini_Get(t *testing.T) {
 			}
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/foo/bar")
@@ -111,7 +111,7 @@ func TestMini_Get(t *testing.T) {
 			}
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/foo/bar/john")
@@ -139,7 +139,7 @@ func TestMini_Get(t *testing.T) {
 			t.Error("not expected to be here")
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/foo/bar/john")
@@ -173,7 +173,7 @@ func TestMini_Get(t *testing.T) {
 			t.Error("not expected to be here")
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/foo/bar/john")
@@ -209,7 +209,7 @@ func TestMini_Get(t *testing.T) {
 			t.Error("not expected to be here")
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/foo/bar/john")
@@ -278,7 +278,7 @@ func TestMini_Group(t *testing.T) {
 			}
 		})
 
-		g := r.SubPath("/sub")
+		g := r.WithBasePath("/sub")
 		g = g.WithHandlerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Minirouter", "override-bar")
 		}))
@@ -299,7 +299,7 @@ func TestMini_Group(t *testing.T) {
 			t.Error("not expected to be here")
 		})
 
-		srv := httptest.NewServer(r.Router())
+		srv := httptest.NewServer(r)
 		defer srv.Close()
 
 		res, err := http.Get(srv.URL + "/sub/foo/bar/john")
