@@ -53,6 +53,11 @@ func TestMini_path(t *testing.T) {
 			args:   args{p: ""},
 			want:   "/base",
 		}, {
+			name:   "Some base path with / suffix, no path",
+			fields: fields{basePath: "/base/"},
+			args:   args{p: ""},
+			want:   "/base/",
+		}, {
 			name:   "Some base path, some path",
 			fields: fields{basePath: "/base"},
 			args:   args{p: "/foo"},
@@ -60,6 +65,11 @@ func TestMini_path(t *testing.T) {
 		}, {
 			name:   "Some base path, some path without /",
 			fields: fields{basePath: "/base"},
+			args:   args{p: "foo"},
+			want:   "/base/foo",
+		}, {
+			name:   "Some base path with / suffix, some path without /",
+			fields: fields{basePath: "/base/"},
 			args:   args{p: "foo"},
 			want:   "/base/foo",
 		}, {

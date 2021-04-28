@@ -10,7 +10,7 @@ import (
 // Middleware wraps an http.Handler, returning a new http.Handler.
 type Middleware func(next http.Handler) http.Handler
 
-// Mini adds middlewares on top of httprouter
+// Mini adds middlewares on top of httprouter.Router
 type Mini struct {
 	router *httprouter.Router
 
@@ -21,7 +21,7 @@ type Mini struct {
 // New initializes a new Mini.
 func New() *Mini {
 	r := httprouter.New()
-	r.HandleMethodNotAllowed = false
+	r.RedirectFixedPath = false // Disable path auto-correction. Let's be strict.
 	return &Mini{
 		router: r,
 	}
@@ -37,8 +37,9 @@ func (m *Mini) Router() *httprouter.Router {
 	return m.router
 }
 
-// WithBasePath returns a new child Mini in which a set of sub-routes can be defined. It can be used for inner
-// routes that share a common middleware. It inherits all middlewares and base-path of the parent Mini.
+// WithBasePath returns a a copy of parent with an augmented base-path, in which a set of sub-routes can be defined.
+// It can be used for inner routes that share a common base-path.
+// The new base-path is the concatenation of the parent's base-path and the given path (eg. <parent's base-path>/<path>).
 func (m *Mini) WithBasePath(path string) *Mini {
 	var middlewaresCopy []Middleware
 	if len(m.middlewares) > 0 {
@@ -53,14 +54,15 @@ func (m *Mini) WithBasePath(path string) *Mini {
 	}
 }
 
-// WithMiddleware returns a new child Mini with one or more middleware.
+// WithMiddleware returns a copy of parent with one or more new middlewares. It can be used for
+// routes that share common middlewares.
 func (m *Mini) WithMiddleware(middleware ...Middleware) *Mini {
 	newMini := m.WithBasePath("")
 	newMini.middlewares = append(newMini.middlewares, middleware...)
 	return newMini
 }
 
-// WithHandlerMiddleware returns a new child Mini and registers an http.Handler as a middleware.
+// WithHandlerMiddleware returns a copy of parent with an http.Handler as a new middleware.
 func (m *Mini) WithHandlerMiddleware(handler http.Handler) *Mini {
 	return m.WithMiddleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -86,48 +88,50 @@ func (m *Mini) HandleFunc(method, path string, handler http.HandlerFunc, middlew
 	m.Handle(method, path, handler, middleware...)
 }
 
-// GET registers a GET handler for the given path.
+// GET registers a GET func handler for the given path.
 func (m *Mini) GET(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodGet, path, handler, middleware...)
 }
 
-// PUT registers a PUT handler for the given path.
+// PUT registers a PUT func handler for the given path.
 func (m *Mini) PUT(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodPut, path, handler, middleware...)
 }
 
-// POST registers a POST handler for the given path.
+// POST registers a POST func handler for the given path.
 func (m *Mini) POST(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodPost, path, handler, middleware...)
 }
 
-// PATCH registers a PATCH handler for the given path.
+// PATCH registers a PATCH func handler for the given path.
 func (m *Mini) PATCH(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodPatch, path, handler, middleware...)
 }
 
-// DELETE registers a DELETE handler for the given path.
+// DELETE registers a DELETE func handler for the given path.
 func (m *Mini) DELETE(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodDelete, path, handler, middleware...)
 }
 
-// OPTIONS registers a OPTIONS handler for the given path.
+// OPTIONS registers a OPTIONS func handler for the given path.
 func (m *Mini) OPTIONS(path string, handler http.HandlerFunc, middleware ...Middleware) {
 	m.Handle(http.MethodOptions, path, handler, middleware...)
 }
 
-// Params returns the httprouter.Params for req.
+// Params returns the httprouter.Params for request.
 // This is just a pass-through to httprouter.ParamsFromContext.
 func Params(req *http.Request) httprouter.Params {
 	return httprouter.ParamsFromContext(req.Context())
 }
 
 func (m *Mini) path(p string) string {
-	base := strings.TrimSuffix(m.basePath, "/")
-
-	if p != "" && !strings.HasPrefix(p, "/") {
-		p = "/" + p
+	if p == "" {
+		return m.basePath
 	}
 
+	base := strings.TrimSuffix(m.basePath, "/")
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
 	return base + p
 }
